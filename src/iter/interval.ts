@@ -10,7 +10,7 @@ export async function* interval(delay: number, { signal }: { signal?: AbortSigna
     try {
         while (true) {
             yield await new Promise<void>((resolve, reject) => {
-                if (signal?.aborted) return reject(signal.reason);
+                signal?.throwIfAborted();
                 callback = () => {
                     signal?.removeEventListener("abort", onAbort);
                     resolve();

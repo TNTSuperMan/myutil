@@ -4,7 +4,7 @@ export async function* animationFrames({ signal }: { signal?: AbortSignal } = {}
     try {
         while (true) {
             yield await new Promise<DOMHighResTimeStamp>((resolve, reject) => {
-                if (signal?.aborted) return reject(signal.reason);
+                signal?.throwIfAborted();
                 handle = requestAnimationFrame((time) => {
                     signal?.removeEventListener("abort", onAbort);
                     handle = null;

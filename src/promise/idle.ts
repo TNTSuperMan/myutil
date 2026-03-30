@@ -2,7 +2,7 @@ export const idleCallback = ({ timeout, signal }: {
     timeout?: number,
     signal?: AbortSignal,
 } = {}) => new Promise<IdleDeadline>((resolve, reject) => {
-    if (signal?.aborted) return reject(signal.reason);
+    signal?.throwIfAborted();
     const handle = requestIdleCallback((deadline) => {
         signal?.removeEventListener("abort", onAbort);
         resolve(deadline);

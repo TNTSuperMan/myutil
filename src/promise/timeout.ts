@@ -1,7 +1,7 @@
 export const timeout = (delay: number, { signal }: {
     signal?: AbortSignal,
 } = {}) => new Promise<void>((resolve, reject) => {
-    if (signal?.aborted) return reject(signal.reason);
+    signal?.throwIfAborted();
     const timeout = setTimeout(() => {
         signal?.removeEventListener("abort", onAbort);
         resolve();

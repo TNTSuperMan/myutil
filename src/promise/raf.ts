@@ -1,7 +1,7 @@
 export const animationFrame = ({ signal }: {
     signal?: AbortSignal,
 } = {}) => new Promise<DOMHighResTimeStamp>((resolve, reject) => {
-    if (signal?.aborted) return reject(signal.reason);
+    signal?.throwIfAborted();
     const handle = requestAnimationFrame((time) => {
         signal?.removeEventListener("abort", onAbort);
         resolve(time);
