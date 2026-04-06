@@ -1,25 +1,8 @@
+import { animationFrame } from "../promise";
+
 export async function* animationFrames({ signal }: { signal?: AbortSignal } = {}): AsyncGenerator<DOMHighResTimeStamp> {
     signal?.throwIfAborted();
-    let handle: number | null = null;
-    try {
-        while (true) {
-            yield await new Promise<DOMHighResTimeStamp>((resolve, reject) => {
-                signal?.throwIfAborted();
-                handle = requestAnimationFrame((time) => {
-                    signal?.removeEventListener("abort", onAbort);
-                    handle = null;
-                    resolve(time);
-                });
-                const onAbort = () => {
-                    signal?.removeEventListener("abort", onAbort);
-                    reject(signal?.reason);
-                };
-                signal?.addEventListener("abort", onAbort);
-            });
-        }
-    } finally {
-        if (handle) {
-            cancelAnimationFrame(handle);
-        }
+    while (true) {
+        yield await animationFrame();
     }
 }
