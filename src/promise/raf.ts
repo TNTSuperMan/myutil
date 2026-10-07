@@ -1,15 +1,8 @@
-export const animationFrame = ({ signal }: {
-    signal?: AbortSignal,
-} = {}) => new Promise<DOMHighResTimeStamp>((resolve, reject) => {
-    signal?.throwIfAborted();
-    const handle = requestAnimationFrame((time) => {
-        signal?.removeEventListener("abort", onAbort);
-        resolve(time);
-    });
-    const onAbort = () => {
-        signal?.removeEventListener("abort", onAbort);
-        cancelAnimationFrame(handle);
-        reject(signal?.reason);
-    };
-    signal?.addEventListener("abort", onAbort);
-});
+import { promiseWithSignal } from "../signal";
+
+export const animationFrame = (
+    { signal }: { signal?: AbortSignal } = {}
+) => promiseWithSignal<DOMHighResTimeStamp>((resolve) => {
+    const handle = requestAnimationFrame(resolve);
+    return () => cancelAnimationFrame(handle);
+}, signal);
