@@ -1,26 +1,25 @@
 import { useInterval } from "../dispose/interval";
+import { useListener } from "../dispose/listener";
 
 export async function* interval(delay: number, { signal }: { signal?: AbortSignal } = {}) {
-    signal?.throwIfAborted();
-    let callback: (() => void) | null = null;
-    using _int = useInterval(() => {
-        if (callback) {
-            callback();
-            callback = null;
-        }
+    let resolvers = Promise.withResolvers<undefined>();
+    using _interval = useInterval(() => {
+        resolvers.resolve(undefined);
     }, delay);
-    while (true) {
-        yield await new Promise<void>((resolve, reject) => {
-            signal?.throwIfAborted();
-            callback = () => {
-                signal?.removeEventListener("abort", onAbort);
-                resolve();
-            };
-            const onAbort = () => {
-                signal?.removeEventListener("abort", onAbort);
-                reject(signal?.reason);
-            }
-            signal?.addEventListener("abort", onAbort);
+
+    if (signal) {
+        signal.throwIfAborted();
+        using _listener = useListener(signal, "abort", () => {
+            resolvers.reject(signal.reason);
         });
+        while (true) {
+            yield resolvers.promise;
+            resolvers = Promise.withResolvers();
+        }
+    } else {
+        while (true) {
+            yield resolvers.promise;
+            resolvers = Promise.withResolvers();
+        }
     }
 }

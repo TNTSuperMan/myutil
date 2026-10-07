@@ -1,22 +1,22 @@
 import { useListener } from "../dispose/listener";
 
 export async function* event<T extends Event>(target: EventTarget, type: string, options?: boolean | AddEventListenerOptions) {
-    const signal = typeof options === "object" ? options.signal : undefined;
-    signal?.throwIfAborted();
-
-    let resolvers: ReturnType<typeof Promise.withResolvers<T>> = Promise.withResolvers();
+    let resolvers = Promise.withResolvers<T>();
     using _listener = useListener(target, type, (ev) => resolvers.resolve(ev as T), options);
 
-    function rejectBySignal() {
-        resolvers.reject(signal?.reason);
-    }
-    signal?.addEventListener("abort", rejectBySignal);
-    try {
+    if (typeof options === "object" && options.signal) {
+        options.signal.throwIfAborted();
+        using _signal_listener = useListener(options.signal, "abort", () => {
+            resolvers.reject(options.signal!.reason);
+        });
         while (true) {
             yield await resolvers.promise;
             resolvers = Promise.withResolvers<T>();
         }
-    } finally {
-        signal?.removeEventListener("abort", rejectBySignal);
+    } else {
+        while (true) {
+            yield await resolvers.promise;
+            resolvers = Promise.withResolvers<T>();
+        }
     }
 }
